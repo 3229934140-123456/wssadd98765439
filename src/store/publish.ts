@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import Taro from '@tarojs/taro'
 import { WorkPage, WorkFileType, RatingLevel, PublishFormData } from '@/types'
 import { generateId } from '@/utils'
 
@@ -7,9 +8,11 @@ interface UploadedFileInfo {
   type: WorkFileType
   size: number
   tempFilePath: string
+  fingerprint: string
 }
 
 interface PublishState {
+  editingWorkId: string | null
   formData: PublishFormData
   uploadedFile: UploadedFileInfo | null
   previewPages: WorkPage[]
@@ -20,6 +23,13 @@ interface PublishState {
   setPreviewPages: (pages: WorkPage[]) => void
   setPageIssue: (pageIndex: number, issue: 'missing' | 'blurry' | 'wrong-direction', checked: boolean) => void
   setPagesChecked: (checked: boolean) => void
+  loadFromWorkSnapshot: (data: {
+    workId: string
+    formData: PublishFormData
+    uploadedFile: UploadedFileInfo | null
+    previewPages: WorkPage[]
+    isPagesChecked: boolean
+  }) => void
   resetPublish: () => void
 }
 
@@ -34,6 +44,7 @@ const initialFormData: PublishFormData = {
 }
 
 export const usePublishStore = create<PublishState>((set, get) => ({
+  editingWorkId: null,
   formData: initialFormData,
   uploadedFile: null,
   previewPages: [],
@@ -77,8 +88,21 @@ export const usePublishStore = create<PublishState>((set, get) => ({
       isPagesChecked: checked
     })),
 
+  loadFromWorkSnapshot: (data) => {
+    console.log('[PublishStore] Load from work snapshot:', data.workId)
+    set({
+      editingWorkId: data.workId,
+      formData: data.formData,
+      uploadedFile: data.uploadedFile,
+      previewPages: data.previewPages,
+      coverPreviewUrl: data.previewPages[0]?.url || '',
+      isPagesChecked: data.isPagesChecked
+    })
+  },
+
   resetPublish: () =>
     set(() => ({
+      editingWorkId: null,
       formData: initialFormData,
       uploadedFile: null,
       previewPages: [],

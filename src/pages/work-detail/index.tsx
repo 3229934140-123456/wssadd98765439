@@ -3,7 +3,14 @@ import { View, Text, ScrollView, Image } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useRouter } from '@tarojs/taro'
 import classnames from 'classnames'
-import { RATING_LABELS, SCHEDULE_TYPE_LABELS, SCHEDULE_TYPE_COLORS } from '@/types'
+import {
+  RATING_LABELS,
+  SCHEDULE_TYPE_LABELS,
+  SCHEDULE_TYPE_COLORS,
+  REVIEW_STAGE_LABELS,
+  REVIEW_STAGE_COLORS,
+  ReviewStage
+} from '@/types'
 import { useWorksStore } from '@/store/works'
 import { useScheduleStore } from '@/store/schedule'
 import StatusBadge from '@/components/StatusBadge'
@@ -11,12 +18,13 @@ import { formatDate, formatPrice } from '@/utils'
 import styles from './index.module.scss'
 
 const SCHEDULE_ORDER = ['presale', 'unlock', 'discount', 'offline']
+const REVIEW_STAGES: ReviewStage[] = ['submitted', 'reviewing', 'need-fix', 'passed']
 
 const WorkDetailPage: React.FC = () => {
   const router = useRouter()
   const workId = router.params.id as string
 
-  const { getWork } = useWorksStore()
+  const { getWork, setReviewStage } = useWorksStore()
   const { getSchedulesByWork, removeSchedule } = useScheduleStore()
 
   const work = getWork(workId)
@@ -38,6 +46,11 @@ const WorkDetailPage: React.FC = () => {
     () => work?.previewPages.filter((p) => p.issues && p.issues.length > 0) || [],
     [work]
   )
+
+  const currentStageIdx = useMemo(() => {
+    if (!work?.reviewStage) return -1
+    return REVIEW_STAGES.indexOf(work.reviewStage)
+  }, [work?.reviewStage])
 
   if (!work) {
     return (
@@ -67,7 +80,48 @@ const WorkDetailPage: React.FC = () => {
     })
   }
 
+  const handleContinueEditing = () => {
+    console.log('[WorkDetail] Continue editing draft/rejected work:', work.id)
+    Taro.navigateTo({
+      url: `/pages/publish/index?editWorkId=${work.id}`
+    })
+  }
+
+  const handleMockReviewAction = (nextStage: ReviewStage) => {
+    Taro.showActionSheet({
+      itemList: [
+        nextStage === 'need-fix' ? '模拟审核不通过（带原因）' : '模拟审核通过',
+        '取消'
+      ],
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          if (nextStage === 'need-fix') {
+            Taro.showModal({
+              title: '填写驳回原因',
+              editable: true,
+              placeholderText: '请输入驳回原因',
+              success: (r) => {
+                if (r.confirm) {
+                  const reason = r.content || '内容需要调整'
+                  setReviewStage(work.id, 'need-fix', reason)
+                  Taro.showToast({ title: '已模拟驳回', icon: 'none' })
+                }
+              }
+            })
+          } else {
+            setReviewStage(work.id, 'passed')
+            Taro.showToast({ title: '已模拟通过', icon: 'success' })
+          }
+        }
+      }
+    })
+  }
+
   const cpText = work.cp.map((c) => c.name).join(' / ')
+
+  const totalTrendViews = work.stats?.trend?.reduce((s, p) => s + p.views, 0) || 0
+  const totalTrendPurchases = work.stats?.trend?.reduce((s, p) => s + p.purchases, 0) || 0
+  const maxTrendViews = Math.max(1, ...(work.stats?.trend?.map((p) => p.views) || [1]))
 
   return (
     <ScrollView className={styles.container} scrollY>
@@ -96,6 +150,130 @@ const WorkDetailPage: React.FC = () => {
             </Text>
           </View>
         </View>
+      </View>
+
+      {(work.status === 'reviewing' || work.status === 'rejected' || work.status === 'published') && (
+        <View className={styles.reviewCard}>
+          <Text className={styles.sectionTitle}>审核进度</Text>
+          <View className={styles.reviewTimeline}>
+            {REVIEW_STAGES.map((stage, idx) => {
+              const active = idx <= currentStageIdx
+              const isCurrent = idx === currentStageIdx
+              return (
+                <View key={stage} className={styles.reviewStep}>
+                  <View
+                    className={classnames(styles.reviewDot, active && styles.reviewDotActive)}
+                    style={{
+                      backgroundColor: active ? REVIEW_STAGE_COLORS[stage] : '#E5E7EB',
+                      borderColor: isCurrent ? REVIEW_STAGE_COLORS[stage] : 'transparent'
+                    }}
+                  >
+                    {active && <Text className={styles.reviewDotCheck}>✓</Text>}
+                  </View>
+                  <View className={styles.reviewStepContent}>
+                    <Text
+                      className={styles.reviewStepLabel}
+                      style={{
+                        color: active ? REVIEW_STAGE_COLORS[stage] : '#9CA3AF',
+                        fontWeight: isCurrent ? 600 : 400
+                      }}
+                    >
+                      {REVIEW_STAGE_LABELS[stage]}
+                      {isCurrent && '（当前）'}
+                    </Text>
+                    {isCurrent && work.reviewUpdatedAt && (
+                      <Text className={styles.reviewStepTime}>
+                        {formatDate(work.reviewUpdatedAt)} 更新
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              )
+            })}
+          </View>
+
+          {work.status === 'rejected' && work.rejectReason && (
+            <View className={styles.rejectBox}>
+              <Text className={styles.rejectTitle}>💡 审核意见</Text>
+              <Text className={styles.rejectText}>{work.rejectReason}</Text>
+            </View>
+          )}
+
+          {(work.status === 'draft' || work.status === 'rejected') && (
+            <View className={styles.editActions}>
+              <View
+                className={styles.primaryBtnSmall}
+                onClick={handleContinueEditing}
+              >
+                ✏️ 继续编辑并重新提交
+              </View>
+            </View>
+          )}
+
+          {work.status === 'reviewing' && (
+            <View className={styles.editActions}>
+              <Text
+                className={styles.reviewHintText}
+                onClick={() => handleMockReviewAction('need-fix')}
+              >
+                🔧 模拟：驳回
+              </Text>
+              <Text
+                className={styles.reviewHintText}
+                style={{ color: '#10B981' }}
+                onClick={() => handleMockReviewAction('passed')}
+              >
+                ✅ 模拟：通过
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      <View className={styles.statsCard}>
+        <Text className={styles.sectionTitle}>运营数据</Text>
+        <View className={styles.statsGrid}>
+          <View className={styles.statItem}>
+            <Text className={styles.statNum}>{work.stats.viewCount}</Text>
+            <Text className={styles.statLabel}>浏览</Text>
+          </View>
+          <View className={styles.statItem}>
+            <Text className={styles.statNum} style={{ color: '#F59E0B' }}>{work.stats.favoriteCount}</Text>
+            <Text className={styles.statLabel}>收藏</Text>
+          </View>
+          <View className={styles.statItem}>
+            <Text className={styles.statNum} style={{ color: '#10B981' }}>{work.stats.purchaseCount}</Text>
+            <Text className={styles.statLabel}>购买</Text>
+          </View>
+          <View className={styles.statItem}>
+            <Text className={styles.statNum} style={{ color: '#8B5CF6' }}>{work.stats.previewClickCount}</Text>
+            <Text className={styles.statLabel}>试读点击</Text>
+          </View>
+        </View>
+
+        <Text className={styles.trendTitle}>近 7 天浏览趋势</Text>
+        <View className={styles.trendChart}>
+          {work.stats.trend.map((p) => {
+            const h = (p.views / maxTrendViews) * 100
+            return (
+              <View key={p.date} className={styles.trendBarCol}>
+                <Text className={styles.trendBarValue}>{p.views}</Text>
+                <View className={styles.trendBarOuter}>
+                  <View
+                    className={styles.trendBarInner}
+                    style={{ height: `${Math.max(10, h)}%` }}
+                  />
+                </View>
+                <Text className={styles.trendBarLabel}>
+                  {p.date.slice(5)}
+                </Text>
+              </View>
+            )
+          })}
+        </View>
+        <Text className={styles.trendSummary}>
+          近 7 天共 {totalTrendViews} 次浏览 · {totalTrendPurchases} 次购买
+        </Text>
       </View>
 
       <Text className={styles.sectionTitle}>试读预览（前{work.previewPages.length}页）</Text>

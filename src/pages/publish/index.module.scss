@@ -6,6 +6,20 @@
   padding-bottom: 180rpx;
 }
 
+.editingHintBar {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(236, 72, 153, 0.12) 100%);
+  border-radius: $radius-md;
+  padding: $spacing-sm $spacing-md;
+  margin-bottom: $spacing-md;
+  border: 2rpx solid rgba(139, 92, 246, 0.2);
+}
+
+.editingHintText {
+  font-size: $font-size-sm;
+  color: $color-primary-dark;
+  font-weight: $font-weight-medium;
+}
+
 .formSection {
   background: $color-bg-card;
   border-radius: $radius-lg;

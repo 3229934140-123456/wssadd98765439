@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect } from 'react'
 import { View, Text, Input, ScrollView, Image } from '@tarojs/components'
-import Taro from '@tarojs/taro'
+import Taro, { useRouter } from '@tarojs/taro'
 import classnames from 'classnames'
 import { RatingLevel, WorkFileType, RATING_LABELS, WorkPage } from '@/types'
 import TagInput from '@/components/TagInput'
@@ -27,20 +27,30 @@ const hashCode = (str: string): number => {
   return Math.abs(hash)
 }
 
-const generatePreviewPagesFromFile = (fileKey: string, pageCount: number): WorkPage[] => {
-  const seed = hashCode(fileKey) % 10000
+const makeFileFingerprint = (args: { name: string; size: number; type: WorkFileType }) =>
+  `doujin-fp-${args.type}-${args.name}-${args.size}`
+
+const generatePreviewPagesFromFile = (
+  fingerprint: string,
+  pageCount: number
+): WorkPage[] => {
+  const seed = hashCode(fingerprint) % 10000
   const count = Math.min(pageCount, 5)
   return Array.from({ length: count }, (_, i) => ({
     index: i + 1,
     url: `https://picsum.photos/seed/doujin-${seed}-${i}/600/800`,
     width: 600,
     height: 800,
-    issues: []
+    issues: [] as ('missing' | 'blurry' | 'wrong-direction')[]
   }))
 }
 
 const PublishPage: React.FC = () => {
+  const router = useRouter()
+  const editWorkId = router.params.editWorkId as string | undefined
+
   const {
+    editingWorkId,
     formData,
     uploadedFile,
     previewPages,
@@ -49,9 +59,32 @@ const PublishPage: React.FC = () => {
     setUploadedFile,
     setPreviewPages,
     setPagesChecked,
+    loadFromWorkSnapshot,
     resetPublish
   } = usePublishStore()
-  const { addWork } = useWorksStore()
+
+  const { saveDraft, addWork, getWork } = useWorksStore()
+
+  useEffect(() => {
+    if (editWorkId && editingWorkId !== editWorkId) {
+      const work = getWork(editWorkId)
+      if (work && work.publishSnapshot) {
+        console.log('[PublishPage] Auto load from work:', work.id, work.title)
+        loadFromWorkSnapshot({
+          workId: work.id,
+          formData: work.publishSnapshot.formData,
+          uploadedFile: work.publishSnapshot.uploadedFile as any,
+          previewPages: work.publishSnapshot.previewPages,
+          isPagesChecked: work.publishSnapshot.isPagesChecked
+        })
+        Taro.showToast({
+          title: work.status === 'rejected' ? '已载入被驳回内容' : '已载入草稿',
+          icon: 'none'
+        })
+      }
+    }
+    return () => {}
+  }, [editWorkId, editingWorkId, getWork, loadFromWorkSnapshot])
 
   const fileType = uploadedFile?.type || null
   const fileUploaded = !!uploadedFile
@@ -73,6 +106,12 @@ const PublishPage: React.FC = () => {
       isPagesChecked
     )
   }, [formData, priceExplicitlySet, fileUploaded, isPagesChecked])
+
+  const canSaveDraft = useMemo(() => {
+    return (
+      formData.title.trim() !== '' || fileUploaded || previewPages.length > 0
+    )
+  }, [formData, fileUploaded, previewPages])
 
   const missingRequired = useMemo(() => {
     const missing: string[] = []
@@ -119,19 +158,24 @@ const PublishPage: React.FC = () => {
           console.log('[PublishPage] chooseImage success:', res.tempFiles.length, 'images')
           const totalSize = res.tempFiles.reduce((sum, f) => sum + f.size, 0)
           const firstPath = res.tempFiles[0].path
-          const fileKey = res.tempFiles.map((f) => f.path + f.size).join('|')
+          const compositeName = `长图_${res.tempFiles.length}张`
+          const fingerprint = makeFileFingerprint({
+            name: compositeName,
+            size: totalSize,
+            type
+          })
           const estimatedPages = Math.max(24, res.tempFiles.length * 2)
-          const fileName = `长图_${res.tempFiles.length}张`
 
           Taro.showLoading({ title: '解析图片中...' })
 
           setTimeout(() => {
-            const pages = generatePreviewPagesFromFile(fileKey, estimatedPages)
+            const pages = generatePreviewPagesFromFile(fingerprint, estimatedPages)
             setUploadedFile({
-              name: fileName,
+              name: compositeName,
               type,
               size: totalSize,
-              tempFilePath: firstPath
+              tempFilePath: firstPath,
+              fingerprint
             })
             setPreviewPages(pages)
             setPagesChecked(false)
@@ -155,18 +199,23 @@ const PublishPage: React.FC = () => {
         success: (res) => {
           const file = res.tempFiles[0]
           console.log('[PublishPage] chooseMessageFile success:', file.name, file.size)
-          const fileKey = `${file.name}-${file.size}-${file.path}`
+          const fingerprint = makeFileFingerprint({
+            name: file.name,
+            size: file.size,
+            type
+          })
           const estimatedPages = 32
 
           Taro.showLoading({ title: '解析文件中...' })
 
           setTimeout(() => {
-            const pages = generatePreviewPagesFromFile(fileKey, estimatedPages)
+            const pages = generatePreviewPagesFromFile(fingerprint, estimatedPages)
             setUploadedFile({
               name: file.name,
               type,
               size: file.size,
-              tempFilePath: file.path
+              tempFilePath: file.path,
+              fingerprint
             })
             setPreviewPages(pages)
             setPagesChecked(false)
@@ -200,8 +249,41 @@ const PublishPage: React.FC = () => {
   }
 
   const handleSaveDraft = () => {
-    console.log('[PublishPage] Save draft:', formData.title)
-    Taro.showToast({ title: '草稿已保存', icon: 'success' })
+    if (!canSaveDraft) {
+      Taro.showToast({ title: '至少填写标题或上传文件', icon: 'none' })
+      return
+    }
+    Taro.showModal({
+      title: '保存草稿',
+      content: '草稿将保存到作品库"草稿"分类，可随时继续编辑。确定保存？',
+      success: (res) => {
+        if (res.confirm) {
+          const draftId = saveDraft({
+            formData,
+            coverUrl: previewPages[0]?.url || '',
+            previewPages,
+            fileType: uploadedFile?.type,
+            uploadedFile: uploadedFile
+              ? {
+                  name: uploadedFile.name,
+                  type: uploadedFile.type,
+                  size: uploadedFile.size,
+                  tempFilePath: uploadedFile.tempFilePath,
+                  fingerprint: (uploadedFile as any).fingerprint || ''
+                }
+              : null,
+            isPagesChecked,
+            existingWorkId: editingWorkId || undefined
+          })
+          Taro.showToast({ title: '草稿已保存到作品库', icon: 'success' })
+          console.log('[PublishPage] Draft saved:', draftId)
+          setTimeout(() => {
+            resetPublish()
+            Taro.switchTab({ url: '/pages/index/index' })
+          }, 800)
+        }
+      }
+    })
   }
 
   const handleSubmit = () => {
@@ -216,7 +298,7 @@ const PublishPage: React.FC = () => {
     }
 
     Taro.showModal({
-      title: '确认提交',
+      title: editingWorkId ? '确认重新提交' : '确认提交',
       content: '提交后将进入审核流程，作品会出现在作品库"审核中"分类。确定提交吗？',
       success: (res) => {
         if (res.confirm) {
@@ -225,21 +307,38 @@ const PublishPage: React.FC = () => {
             ...formData,
             price: actualPrice
           }
+          if (editingWorkId) {
+            // 如果是编辑草稿/驳回后重提，先移除旧的再新增
+            const store = useWorksStore.getState()
+            if (store.getWork(editingWorkId)) {
+              store.removeWork(editingWorkId)
+            }
+          }
           const workId = addWork({
             formData: submitFormData,
             coverUrl: previewPages[0]?.url || '',
             previewPages,
-            fileType: uploadedFile!.type
+            fileType: uploadedFile!.type,
+            uploadedFile: uploadedFile
+              ? {
+                  name: uploadedFile.name,
+                  type: uploadedFile.type,
+                  size: uploadedFile.size,
+                  tempFilePath: uploadedFile.tempFilePath,
+                  fingerprint: (uploadedFile as any).fingerprint || ''
+                }
+              : null,
+            isPagesChecked
           })
           setTimeout(() => {
             Taro.hideLoading()
             resetPublish()
-            Taro.showToast({ title: '已提交审核', icon: 'success' })
+            Taro.showToast({ title: editingWorkId ? '已重新提交审核' : '已提交审核', icon: 'success' })
             setTimeout(() => {
               Taro.switchTab({
                 url: '/pages/index/index',
                 success: () => {
-                  console.log('[PublishPage] Switched to works library, new workId:', workId)
+                  console.log('[PublishPage] Switched to works library, workId:', workId)
                 }
               })
             }, 800)
@@ -262,6 +361,14 @@ const PublishPage: React.FC = () => {
 
   return (
     <ScrollView className={styles.container} scrollY>
+      {editingWorkId && (
+        <View className={styles.editingHintBar}>
+          <Text className={styles.editingHintText}>
+            📝 正在编辑 {editingWorkId ? '草稿' : ''}
+          </Text>
+        </View>
+      )}
+
       <View className={styles.formSection}>
         <Text className={styles.sectionTitle}>基本信息</Text>
 
@@ -380,9 +487,7 @@ const PublishPage: React.FC = () => {
             </View>
           </View>
           {formData.price > 0 && (
-            <Text className={styles.priceLabel}>
-              售价：{formatPrice(formData.price)}
-            </Text>
+            <Text className={styles.priceLabel}>售价：{formatPrice(formData.price)}</Text>
           )}
           {formData.price === -1 && (
             <Text className={styles.priceLabel} style={{ color: '#10B981' }}>
@@ -506,14 +611,17 @@ const PublishPage: React.FC = () => {
 
       <View className={styles.bottomBar}>
         <View className={styles.btnRow}>
-          <View className={styles.btnSave} onClick={handleSaveDraft}>
+          <View
+            className={classnames(styles.btnSave, !canSaveDraft && styles.disabled)}
+            onClick={handleSaveDraft}
+          >
             保存草稿
           </View>
           <View
             className={classnames(styles.btnSubmit, !canSubmit && styles.disabled)}
             onClick={handleSubmit}
           >
-            提交审核
+            {editingWorkId ? '重新提交审核' : '提交审核'}
           </View>
         </View>
       </View>

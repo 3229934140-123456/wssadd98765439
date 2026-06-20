@@ -364,3 +364,87 @@
   font-size: $font-size-sm;
   color: $color-text-tertiary;
 }
+
+.reminderList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.reminderItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-md $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.reminderItemDone {
+  opacity: 0.6;
+
+  .reminderType,
+  .reminderWork,
+  .reminderDesc {
+    text-decoration: line-through;
+    color: $color-text-tertiary !important;
+  }
+}
+
+.reminderIndicator {
+  width: 12rpx;
+  height: 80rpx;
+  border-radius: $radius-sm;
+  flex-shrink: 0;
+}
+
+.reminderContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.reminderHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4rpx;
+}
+
+.reminderType {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+}
+
+.reminderDue {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.reminderWork {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  margin-bottom: 4rpx;
+  @include text-ellipsis;
+}
+
+.reminderDesc {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: $line-height-normal;
+}
+
+.reminderDoneBtn {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: $radius-round;
+  background: rgba($color-success, 0.1);
+  color: $color-success;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}

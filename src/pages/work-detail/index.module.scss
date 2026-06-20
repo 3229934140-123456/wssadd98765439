@@ -253,6 +253,225 @@
   line-height: $line-height-loose;
 }
 
+.reviewCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.reviewTimeline {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.reviewStep {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-md;
+}
+
+.reviewDot {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: $radius-round;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4rpx;
+  border: 4rpx solid transparent;
+  transition: all $transition-base;
+}
+
+.reviewDotActive {
+  border: 4rpx solid currentColor;
+}
+
+.reviewDotCheck {
+  color: $color-text-white;
+  font-size: 20rpx;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.reviewStepContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.reviewStepLabel {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+}
+
+.reviewStepTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+}
+
+.rejectBox {
+  background: rgba($color-error, 0.06);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  border: 2rpx solid rgba($color-error, 0.15);
+  margin-top: $spacing-md;
+}
+
+.rejectTitle {
+  font-size: $font-size-sm;
+  color: $color-error;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $spacing-xs;
+}
+
+.rejectText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-loose;
+  white-space: pre-wrap;
+}
+
+.editActions {
+  display: flex;
+  gap: $spacing-md;
+  justify-content: center;
+  margin-top: $spacing-lg;
+  padding-top: $spacing-md;
+  border-top: 2rpx solid $color-divider;
+}
+
+.primaryBtnSmall {
+  @include button-reset;
+  padding: 0 $spacing-lg;
+  height: 72rpx;
+  border-radius: $radius-button;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.reviewHintText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  padding: $spacing-sm $spacing-md;
+  background: $color-bg-secondary;
+  border-radius: $radius-sm;
+  font-weight: $font-weight-medium;
+}
+
+.statsCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-sm 0;
+  background: $color-bg-secondary;
+  border-radius: $radius-md;
+}
+
+.statNum {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: 22rpx;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+}
+
+.trendTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.trendChart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8rpx;
+  height: 200rpx;
+  padding-bottom: $spacing-md;
+  margin-bottom: $spacing-sm;
+}
+
+.trendBarCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  min-width: 0;
+}
+
+.trendBarValue {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  line-height: 1;
+}
+
+.trendBarOuter {
+  width: 100%;
+  flex: 1;
+  background: $color-bg-secondary;
+  border-radius: $radius-xs;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.trendBarInner {
+  width: 100%;
+  background: linear-gradient(180deg, $color-primary 0%, $color-primary-light 100%);
+  border-radius: $radius-xs;
+  min-height: 10rpx;
+  transition: height $transition-base;
+}
+
+.trendBarLabel {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  line-height: 1;
+}
+
+.trendSummary {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  text-align: center;
+}
+
 .bottomBar {
   position: fixed;
   bottom: 0;
