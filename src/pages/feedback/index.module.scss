@@ -1,0 +1,172 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  min-height: 100vh;
+  padding: $page-padding;
+  padding-bottom: 40rpx;
+}
+
+.statsOverview {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-md;
+  margin-bottom: $spacing-xl;
+}
+
+.statCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  position: relative;
+  overflow: hidden;
+}
+
+.statCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6rpx;
+  height: 100%;
+}
+
+.statCardPurple::before {
+  background: linear-gradient(180deg, $color-primary 0%, $color-primary-light 100%);
+}
+
+.statCardPink::before {
+  background: linear-gradient(180deg, $color-secondary 0%, $color-secondary-light 100%);
+}
+
+.statCardGreen::before {
+  background: linear-gradient(180deg, $color-success 0%, $color-success-light 100%);
+}
+
+.statCardOrange::before {
+  background: linear-gradient(180deg, $color-warning 0%, $color-warning-light 100%);
+}
+
+.statIcon {
+  font-size: 40rpx;
+  margin-bottom: $spacing-xs;
+}
+
+.statValue {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  line-height: 1.2;
+  margin-bottom: 4rpx;
+}
+
+.statLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.worksStats {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-lg;
+}
+
+.workStatRow {
+  display: flex;
+  align-items: center;
+  padding: $spacing-md 0;
+  border-bottom: 2rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  &:first-child {
+    padding-top: 0;
+  }
+}
+
+.workStatName {
+  flex: 1;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  @include text-ellipsis;
+  min-width: 0;
+}
+
+.workStatNumbers {
+  display: flex;
+  gap: $spacing-lg;
+}
+
+.workStatItem {
+  text-align: center;
+  min-width: 80rpx;
+}
+
+.workStatItemValue {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-primary;
+}
+
+.workStatItemLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: 2rpx;
+}
+
+.filterTabs {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+}
+
+.filterTab {
+  padding: 12rpx 32rpx;
+  border-radius: $radius-round;
+  background: $color-bg-card;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  transition: all $transition-base;
+  box-shadow: $shadow-card;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.filterTabActive {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+}
+
+.feedbackList {
+  display: flex;
+  flex-direction: column;
+}
+
+.emptyState {
+  padding: $spacing-xl * 2;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 80rpx;
+  margin-bottom: $spacing-md;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+}

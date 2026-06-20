@@ -1,0 +1,56 @@
+@use '@/styles/variables.scss' as *;
+
+.wrapper {
+  width: 100%;
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  align-items: center;
+  padding: $spacing-md;
+  background: $color-bg-input;
+  border-radius: $radius-md;
+  min-height: 88rpx;
+  border: 2rpx solid transparent;
+  transition: all $transition-base;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 8rpx 16rpx;
+  background: $color-primary-bg;
+  border-radius: $radius-sm;
+}
+
+.tagText {
+  font-size: $font-size-sm;
+  color: $color-primary-dark;
+}
+
+.removeBtn {
+  margin-left: $spacing-xs;
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+  line-height: 1;
+  padding: 0 4rpx;
+}
+
+.input {
+  flex: 1;
+  min-width: 200rpx;
+  height: 56rpx;
+  font-size: $font-size-md;
+  padding: 0;
+}
+
+.inputWithTags {
+  min-width: 120rpx;
+}
+
+.placeholder {
+  color: $color-text-tertiary;
+  font-size: $font-size-md;
+}

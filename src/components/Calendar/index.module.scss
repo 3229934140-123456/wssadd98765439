@@ -1,0 +1,114 @@
+@use '@/styles/variables.scss' as *;
+
+.calendar {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+}
+
+.monthTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.navBtn {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+  color: $color-text-secondary;
+  border-radius: $radius-md;
+  transition: all $transition-base;
+
+  &:active {
+    background: $color-bg-hover;
+  }
+}
+
+.weekDays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: $spacing-sm;
+}
+
+.weekDay {
+  text-align: center;
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  padding: $spacing-sm 0;
+}
+
+.daysGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4rpx;
+}
+
+.dayCell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-md;
+  transition: all $transition-base;
+  position: relative;
+
+  &:active {
+    background: $color-bg-hover;
+  }
+}
+
+.otherMonth {
+  .dayNumber {
+    color: $color-text-disabled;
+  }
+}
+
+.today {
+  .dayNumber {
+    color: $color-primary;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.selected {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+
+  .dayNumber {
+    color: $color-text-white;
+  }
+
+  .dot {
+    background: $color-text-white !important;
+  }
+}
+
+.dayNumber {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  line-height: 1.4;
+}
+
+.scheduleDots {
+  display: flex;
+  gap: 4rpx;
+  margin-top: 4rpx;
+}
+
+.dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: $radius-round;
+}

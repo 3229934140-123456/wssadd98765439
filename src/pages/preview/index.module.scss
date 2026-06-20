@@ -1,0 +1,250 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  min-height: 100vh;
+  background: #000;
+  padding-bottom: 200rpx;
+}
+
+.previewMain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  padding: $spacing-lg;
+}
+
+.mainImageWrapper {
+  width: 100%;
+  max-width: 600rpx;
+  position: relative;
+}
+
+.mainImage {
+  width: 100%;
+  height: auto;
+  min-height: 600rpx;
+  border-radius: $radius-md;
+  background: #1a1a1a;
+}
+
+.pageIndicator {
+  position: absolute;
+  top: $spacing-md;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  padding: 8rpx 24rpx;
+  border-radius: $radius-round;
+}
+
+.pageIndicatorText {
+  color: $color-text-white;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+}
+
+.navBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 80rpx;
+  height: 80rpx;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: $radius-round;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  transition: all $transition-base;
+
+  &:active {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}
+
+.navBtnPrev {
+  left: -20rpx;
+}
+
+.navBtnNext {
+  right: -20rpx;
+}
+
+.navBtnText {
+  font-size: 40rpx;
+  color: $color-text-white;
+  line-height: 1;
+}
+
+.navBtnDisabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.thumbnailBar {
+  position: fixed;
+  bottom: calc(120rpx + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  padding: $spacing-md 0;
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.thumbnailList {
+  display: flex;
+  gap: $spacing-sm;
+  padding: 0 $page-padding;
+  overflow-x: auto;
+  @include scroll-x-container;
+}
+
+.thumbnailItem {
+  @include scroll-x-item(120rpx);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.thumbnailImage {
+  width: 120rpx;
+  height: 160rpx;
+  border-radius: $radius-sm;
+  border: 4rpx solid transparent;
+  transition: all $transition-base;
+}
+
+.thumbnailActive .thumbnailImage {
+  border-color: $color-primary;
+}
+
+.thumbnailPageNum {
+  position: absolute;
+  bottom: 4rpx;
+  right: 4rpx;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 2rpx 8rpx;
+  border-radius: $radius-xs;
+  font-size: 18rpx;
+  color: $color-text-white;
+}
+
+.issueMarkers {
+  position: absolute;
+  top: 4rpx;
+  left: 4rpx;
+  display: flex;
+  gap: 2rpx;
+}
+
+.issueMarker {
+  width: 16rpx;
+  height: 16rpx;
+  background: $color-error;
+  border-radius: $radius-round;
+  border: 2rpx solid $color-text-white;
+}
+
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: $spacing-lg $page-padding;
+  padding-bottom: calc($spacing-lg + env(safe-area-inset-bottom));
+  background: rgba(30, 30, 30, 0.98);
+  backdrop-filter: blur(20px);
+  z-index: 10;
+}
+
+.issueSectionTitle {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-sm;
+}
+
+.issueButtons {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+}
+
+.issueBtn {
+  @include button-reset;
+  flex: 1;
+  height: 72rpx;
+  border-radius: $radius-md;
+  background: rgba(255, 255, 255, 0.08);
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  border: 2rpx solid transparent;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.issueBtnActive {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: $color-error;
+  color: $color-error;
+}
+
+.actionRow {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.backBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  background: rgba(255, 255, 255, 0.1);
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.confirmBtn {
+  @include button-reset;
+  flex: 2;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.issueSummary {
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: $radius-md;
+  padding: $spacing-sm $spacing-md;
+  margin-bottom: $spacing-md;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.issueSummaryText {
+  font-size: $font-size-sm;
+  color: $color-error;
+}
+
+.issueSummaryCount {
+  font-size: $font-size-sm;
+  color: $color-error;
+  font-weight: $font-weight-semibold;
+}

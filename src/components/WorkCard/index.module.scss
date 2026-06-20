@@ -1,0 +1,130 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  display: flex;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.99);
+  }
+}
+
+.cover {
+  width: 180rpx;
+  height: 252rpx;
+  border-radius: $radius-md;
+  flex-shrink: 0;
+  background: $color-bg-hover;
+}
+
+.content {
+  flex: 1;
+  margin-left: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $spacing-sm;
+}
+
+.title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+  flex: 1;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  margin-top: $spacing-sm;
+}
+
+.metaText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.divider {
+  width: 2rpx;
+  height: 20rpx;
+  background: $color-border;
+  margin: 0 $spacing-sm;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  margin-top: $spacing-sm;
+}
+
+.tag {
+  padding: 4rpx 16rpx;
+  background: $color-tag-bg;
+  color: $color-tag-text;
+  font-size: $font-size-xs;
+  border-radius: $radius-sm;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: $spacing-md;
+}
+
+.stats {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.stat {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  &:last-child {
+    color: $color-price;
+  }
+}
+
+.date {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.rejectBox {
+  margin-top: $spacing-sm;
+  padding: $spacing-sm;
+  background: rgba(239, 68, 68, 0.08);
+  border-radius: $radius-sm;
+  display: flex;
+  align-items: flex-start;
+}
+
+.rejectLabel {
+  font-size: $font-size-xs;
+  color: $color-error;
+  font-weight: $font-weight-medium;
+  flex-shrink: 0;
+}
+
+.rejectText {
+  font-size: $font-size-xs;
+  color: $color-error;
+  @include text-ellipsis-multi(1);
+}
