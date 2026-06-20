@@ -7,6 +7,7 @@ import TagInput from '@/components/TagInput'
 import PagePreview from '@/components/PagePreview'
 import { formatPrice } from '@/utils'
 import { usePublishStore } from '@/store/publish'
+import { useWorksStore } from '@/store/works'
 import styles from './index.module.scss'
 
 const RATING_OPTIONS: RatingLevel[] = ['G', 'PG', 'R15', 'R18']
@@ -16,12 +17,22 @@ const FILE_TYPE_OPTIONS: { type: WorkFileType; label: string; icon: string }[] =
   { type: 'epub', label: 'ePub', icon: '📱' }
 ]
 
-const generatePreviewPagesFromFile = (filePath: string, fileType: WorkFileType, pageCount: number): WorkPage[] => {
-  const seed = Math.floor(Math.random() * 50)
+const hashCode = (str: string): number => {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash
+  }
+  return Math.abs(hash)
+}
+
+const generatePreviewPagesFromFile = (fileKey: string, pageCount: number): WorkPage[] => {
+  const seed = hashCode(fileKey) % 10000
   const count = Math.min(pageCount, 5)
   return Array.from({ length: count }, (_, i) => ({
     index: i + 1,
-    url: `https://picsum.photos/seed/${seed + i * 3}/600/800`,
+    url: `https://picsum.photos/seed/doujin-${seed}-${i}/600/800`,
     width: 600,
     height: 800,
     issues: []
@@ -37,11 +48,15 @@ const PublishPage: React.FC = () => {
     setFormData,
     setUploadedFile,
     setPreviewPages,
-    setPagesChecked
+    setPagesChecked,
+    resetPublish
   } = usePublishStore()
+  const { addWork } = useWorksStore()
 
   const fileType = uploadedFile?.type || null
   const fileUploaded = !!uploadedFile
+  const priceExplicitlySet = formData.price > 0 || formData.price === -1
+  const actualPrice = formData.price === -1 ? 0 : formData.price
   const pagesWithIssues = useMemo(
     () => previewPages.filter((p) => p.issues && p.issues.length > 0),
     [previewPages]
@@ -53,11 +68,11 @@ const PublishPage: React.FC = () => {
       formData.originalWork.trim() !== '' &&
       formData.cp.trim() !== '' &&
       formData.pages > 0 &&
-      formData.price >= 0 &&
+      priceExplicitlySet &&
       fileUploaded &&
       isPagesChecked
     )
-  }, [formData, fileUploaded, isPagesChecked])
+  }, [formData, priceExplicitlySet, fileUploaded, isPagesChecked])
 
   const missingRequired = useMemo(() => {
     const missing: string[] = []
@@ -65,16 +80,21 @@ const PublishPage: React.FC = () => {
     if (!formData.originalWork.trim()) missing.push('原作标签')
     if (!formData.cp.trim()) missing.push('CP')
     if (formData.pages <= 0) missing.push('页数')
+    if (!priceExplicitlySet) missing.push('价格（需选择"免费"或填入金额）')
     if (!fileUploaded) missing.push('文件上传')
     if (!isPagesChecked) missing.push('逐页检查')
     return missing
-  }, [formData, fileUploaded, isPagesChecked])
+  }, [formData, priceExplicitlySet, fileUploaded, isPagesChecked])
 
   const handleInput = (key: keyof typeof formData, value: string | number | string[]) => {
     setFormData({ [key]: value } as any)
     if (isPagesChecked) {
       setPagesChecked(false)
     }
+  }
+
+  const setFreePrice = () => {
+    handleInput('price', -1)
   }
 
   const handleFileTypeSelect = (type: WorkFileType) => {
@@ -99,12 +119,14 @@ const PublishPage: React.FC = () => {
           console.log('[PublishPage] chooseImage success:', res.tempFiles.length, 'images')
           const totalSize = res.tempFiles.reduce((sum, f) => sum + f.size, 0)
           const firstPath = res.tempFiles[0].path
-          const fileName = `长图_${res.tempFiles.length}张_${Date.now()}`
+          const fileKey = res.tempFiles.map((f) => f.path + f.size).join('|')
+          const estimatedPages = Math.max(24, res.tempFiles.length * 2)
+          const fileName = `长图_${res.tempFiles.length}张`
 
           Taro.showLoading({ title: '解析图片中...' })
 
           setTimeout(() => {
-            const pages = generatePreviewPagesFromFile(firstPath, type, Math.max(24, res.tempFiles.length * 2))
+            const pages = generatePreviewPagesFromFile(fileKey, estimatedPages)
             setUploadedFile({
               name: fileName,
               type,
@@ -114,7 +136,7 @@ const PublishPage: React.FC = () => {
             setPreviewPages(pages)
             setPagesChecked(false)
             if (formData.pages <= 0) {
-              setFormData({ pages: Math.max(24, res.tempFiles.length * 2) })
+              setFormData({ pages: estimatedPages })
             }
             Taro.hideLoading()
             Taro.showToast({ title: '图片解析成功', icon: 'success' })
@@ -133,11 +155,13 @@ const PublishPage: React.FC = () => {
         success: (res) => {
           const file = res.tempFiles[0]
           console.log('[PublishPage] chooseMessageFile success:', file.name, file.size)
+          const fileKey = `${file.name}-${file.size}-${file.path}`
+          const estimatedPages = 32
 
           Taro.showLoading({ title: '解析文件中...' })
 
           setTimeout(() => {
-            const pages = generatePreviewPagesFromFile(file.path, type, 32)
+            const pages = generatePreviewPagesFromFile(fileKey, estimatedPages)
             setUploadedFile({
               name: file.name,
               type,
@@ -147,7 +171,7 @@ const PublishPage: React.FC = () => {
             setPreviewPages(pages)
             setPagesChecked(false)
             if (formData.pages <= 0) {
-              setFormData({ pages: 32 })
+              setFormData({ pages: estimatedPages })
             }
             Taro.hideLoading()
             Taro.showToast({ title: '文件解析成功', icon: 'success' })
@@ -191,16 +215,34 @@ const PublishPage: React.FC = () => {
       return
     }
 
-    console.log('[PublishPage] Submit for review:', formData.title)
     Taro.showModal({
       title: '确认提交',
-      content: '提交后将进入审核流程，确定要提交吗？',
+      content: '提交后将进入审核流程，作品会出现在作品库"审核中"分类。确定提交吗？',
       success: (res) => {
         if (res.confirm) {
           Taro.showLoading({ title: '提交中...' })
+          const submitFormData = {
+            ...formData,
+            price: actualPrice
+          }
+          const workId = addWork({
+            formData: submitFormData,
+            coverUrl: previewPages[0]?.url || '',
+            previewPages,
+            fileType: uploadedFile!.type
+          })
           setTimeout(() => {
             Taro.hideLoading()
+            resetPublish()
             Taro.showToast({ title: '已提交审核', icon: 'success' })
+            setTimeout(() => {
+              Taro.switchTab({
+                url: '/pages/index/index',
+                success: () => {
+                  console.log('[PublishPage] Switched to works library, new workId:', workId)
+                }
+              })
+            }, 800)
           }, 1000)
         }
       }
@@ -305,18 +347,46 @@ const PublishPage: React.FC = () => {
 
         <View className={styles.formGroup}>
           <Text className={styles.label}>
-            价格（元）<Text className={styles.required}>*</Text>
+            价格<Text className={styles.required}>*</Text>
           </Text>
-          <Input
-            className={styles.input}
-            type="digit"
-            placeholder="0为免费"
-            value={formData.price > 0 ? String(formData.price) : ''}
-            onInput={(e) => handleInput('price', parseFloat(e.detail.value) || 0)}
-          />
+          <View className={styles.priceOptions}>
+            <View
+              className={classnames(
+                styles.priceOption,
+                formData.price === -1 && styles.priceOptionActive,
+                styles.priceFree
+              )}
+              onClick={setFreePrice}
+            >
+              🆓 免费刊
+            </View>
+            <View
+              className={classnames(
+                styles.priceOption,
+                formData.price > 0 && styles.priceOptionActive
+              )}
+            >
+              <Input
+                className={styles.priceInput}
+                type="digit"
+                placeholder="输入金额"
+                value={formData.price > 0 ? String(formData.price) : ''}
+                onInput={(e) => {
+                  const v = parseFloat(e.detail.value)
+                  handleInput('price', isNaN(v) ? 0 : Math.max(0, v))
+                }}
+              />
+              <Text className={styles.priceUnit}>元</Text>
+            </View>
+          </View>
           {formData.price > 0 && (
             <Text className={styles.priceLabel}>
               售价：{formatPrice(formData.price)}
+            </Text>
+          )}
+          {formData.price === -1 && (
+            <Text className={styles.priceLabel} style={{ color: '#10B981' }}>
+              此刊为免费发布
             </Text>
           )}
         </View>
@@ -348,9 +418,9 @@ const PublishPage: React.FC = () => {
 
         {!fileUploaded ? (
           <View className={styles.formGroup}>
-            <View className={styles.uploadArea} onClick={() => {}}>
+            <View className={styles.uploadArea}>
               <Text className={styles.uploadIcon}>☝️</Text>
-              <Text className={styles.uploadText}>请先选择文件类型</Text>
+              <Text className={styles.uploadText}>请点击上方类型选择文件</Text>
               <Text className={styles.uploadHint}>支持 PDF / 长图 / ePub，最大 100MB</Text>
             </View>
           </View>
@@ -368,7 +438,7 @@ const PublishPage: React.FC = () => {
                   </Text>
                 </View>
               </View>
-              <Text className={styles.uploadSuccessRight}>点击重新上传</Text>
+              <Text className={styles.uploadSuccessRight}>重新上传</Text>
             </View>
           </View>
         )}
@@ -392,7 +462,7 @@ const PublishPage: React.FC = () => {
                 原作：{formData.originalWork || '未填写'}{'\n'}
                 CP：{formData.cp || '未填写'}{'\n'}
                 分级：{RATING_LABELS[formData.rating]}{'\n'}
-                共 {formData.pages} 页 · {formatPrice(formData.price)}
+                共 {formData.pages} 页 · {actualPrice === 0 ? '免费' : formatPrice(actualPrice)}
               </Text>
             </View>
           </View>

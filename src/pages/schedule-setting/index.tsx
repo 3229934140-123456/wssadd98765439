@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { View, Text, Image, Input, Slider, Picker } from '@tarojs/components'
 import Taro from '@tarojs/taro'
+import { useRouter } from '@tarojs/taro'
 import classnames from 'classnames'
-import { mockWorks } from '@/data/works'
 import { ScheduleType, SCHEDULE_TYPE_LABELS, SCHEDULE_TYPE_COLORS } from '@/types'
+import { useWorksStore } from '@/store/works'
 import { useScheduleStore } from '@/store/schedule'
 import { formatDate } from '@/utils'
 import styles from './index.module.scss'
@@ -16,17 +17,31 @@ const TYPE_OPTIONS: { type: ScheduleType; desc: string }[] = [
 ]
 
 const ScheduleSettingPage: React.FC = () => {
-  const works = mockWorks.filter((w) => w.status !== 'offline')
+  const router = useRouter()
+  const paramWorkId = router.params.workId as string | undefined
+
+  const { works } = useWorksStore()
   const { addSchedule } = useScheduleStore()
 
-  const [selectedWorkId, setSelectedWorkId] = useState<string>('')
+  const availableWorks = useMemo(
+    () => works.filter((w) => w.status !== 'offline'),
+    [works]
+  )
+
+  const [selectedWorkId, setSelectedWorkId] = useState<string>(paramWorkId || '')
   const [selectedType, setSelectedType] = useState<ScheduleType | null>(null)
   const [selectedDate, setSelectedDate] = useState<string>('')
   const [selectedTime, setSelectedTime] = useState<string>('')
   const [discountRate, setDiscountRate] = useState<number>(80)
   const [discountDuration, setDiscountDuration] = useState<string>('3')
 
-  const selectedWork = works.find((w) => w.id === selectedWorkId)
+  useEffect(() => {
+    if (paramWorkId) {
+      setSelectedWorkId(paramWorkId)
+    }
+  }, [paramWorkId])
+
+  const selectedWork = availableWorks.find((w) => w.id === selectedWorkId)
 
   const canSave = useMemo(() => {
     const baseValid = selectedWorkId && selectedType && selectedDate && selectedTime
@@ -67,7 +82,7 @@ const ScheduleSettingPage: React.FC = () => {
       extraInfo
     })
 
-    console.log('[ScheduleSettingPage] Schedule saved to store')
+    console.log('[ScheduleSettingPage] Schedule saved to store for work:', selectedWorkId)
     Taro.showToast({ title: '档期已添加', icon: 'success' })
     setTimeout(() => Taro.navigateBack(), 800)
   }
@@ -76,33 +91,39 @@ const ScheduleSettingPage: React.FC = () => {
     <View className={styles.container}>
       <View className={styles.formSection}>
         <Text className={styles.sectionTitle}>选择作品</Text>
-        <View className={styles.workOptions}>
-          {works.map((work) => (
-            <View
-              key={work.id}
-              className={classnames(
-                styles.workOption,
-                selectedWorkId === work.id && styles.workOptionActive
-              )}
-              onClick={() => setSelectedWorkId(work.id)}
-            >
-              <Image
-                className={styles.workOptionCover}
-                src={work.coverUrl}
-                mode="aspectFill"
-              />
-              <View className={styles.workOptionInfo}>
-                <Text className={styles.workOptionTitle}>{work.title}</Text>
-                <Text className={styles.workOptionMeta}>{work.originalWork} · {work.pages}页</Text>
-              </View>
-              <View className={styles.workOptionCheck}>
-                {selectedWorkId === work.id && (
-                  <Text className={styles.workOptionCheckText}>✓</Text>
+        {availableWorks.length > 0 ? (
+          <View className={styles.workOptions}>
+            {availableWorks.map((work) => (
+              <View
+                key={work.id}
+                className={classnames(
+                  styles.workOption,
+                  selectedWorkId === work.id && styles.workOptionActive
                 )}
+                onClick={() => setSelectedWorkId(work.id)}
+              >
+                <Image
+                  className={styles.workOptionCover}
+                  src={work.coverUrl}
+                  mode="aspectFill"
+                />
+                <View className={styles.workOptionInfo}>
+                  <Text className={styles.workOptionTitle}>{work.title}</Text>
+                  <Text className={styles.workOptionMeta}>{work.originalWork} · {work.pages}页</Text>
+                </View>
+                <View className={styles.workOptionCheck}>
+                  {selectedWorkId === work.id && (
+                    <Text className={styles.workOptionCheckText}>✓</Text>
+                  )}
+                </View>
               </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        ) : (
+          <Text className={styles.emptyWorksHint}>
+            还没有可排期的作品，先去发布页创建一本吧~
+          </Text>
+        )}
       </View>
 
       <View className={styles.formSection}>
@@ -210,7 +231,13 @@ const ScheduleSettingPage: React.FC = () => {
           <View className={styles.btnCancel} onClick={handleCancel}>
             取消
           </View>
-          <View className={styles.btnSave} onClick={handleSave}>
+          <View
+            className={classnames(
+              styles.btnSave,
+              !canSave && styles.btnSaveDisabled
+            )}
+            onClick={handleSave}
+          >
             保存档期
           </View>
         </View>

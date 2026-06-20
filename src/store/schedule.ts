@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import { ScheduleNode } from '@/types'
 import { mockScheduleNodes } from '@/data/schedule'
 import { generateId } from '@/utils'
@@ -11,35 +12,61 @@ interface ScheduleState {
   getSchedulesByWork: (workId: string) => ScheduleNode[]
 }
 
-export const useScheduleStore = create<ScheduleState>((set, get) => ({
-  schedules: [...mockScheduleNodes],
+export const useScheduleStore = create<ScheduleState>()(
+  persist(
+    (set, get) => ({
+      schedules: [...mockScheduleNodes],
 
-  addSchedule: (schedule) =>
-    set((state) => ({
-      schedules: [
-        ...state.schedules,
-        {
-          ...schedule,
-          id: generateId()
+      addSchedule: (schedule) =>
+        set((state) => ({
+          schedules: [
+            ...state.schedules,
+            {
+              ...schedule,
+              id: generateId()
+            }
+          ]
+        })),
+
+      removeSchedule: (id) =>
+        set((state) => ({
+          schedules: state.schedules.filter((s) => s.id !== id)
+        })),
+
+      updateSchedule: (id, data) =>
+        set((state) => ({
+          schedules: state.schedules.map((s) =>
+            s.id === id ? { ...s, ...data } : s
+          )
+        })),
+
+      getSchedulesByWork: (workId) => {
+        return get().schedules.filter((s) => s.workId === workId)
+      }
+    }),
+    {
+      name: 'doujinshi-schedule-storage',
+      storage: createJSONStorage(() => ({
+        getItem: (name) => {
+          try {
+            return Taro.getStorageSync(name)
+          } catch (e) {
+            return null
+          }
+        },
+        setItem: (name, value) => {
+          try {
+            Taro.setStorageSync(name, value)
+          } catch (e) {}
+        },
+        removeItem: (name) => {
+          try {
+            Taro.removeStorageSync(name)
+          } catch (e) {}
         }
-      ]
-    })),
-
-  removeSchedule: (id) =>
-    set((state) => ({
-      schedules: state.schedules.filter((s) => s.id !== id)
-    })),
-
-  updateSchedule: (id, data) =>
-    set((state) => ({
-      schedules: state.schedules.map((s) =>
-        s.id === id ? { ...s, ...data } : s
-      )
-    })),
-
-  getSchedulesByWork: (workId) => {
-    return get().schedules.filter((s) => s.workId === workId)
-  }
-}))
+      }))
+    }
+  )
+)
 
 export default useScheduleStore

@@ -3,7 +3,7 @@ import { View, Text, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import classnames from 'classnames'
 import { Work, WorkStatus } from '@/types'
-import { mockWorks } from '@/data/works'
+import { useWorksStore } from '@/store/works'
 import WorkCard from '@/components/WorkCard'
 import styles from './index.module.scss'
 
@@ -16,7 +16,7 @@ const FILTER_TABS: { key: WorkStatus | 'all'; label: string }[] = [
 ]
 
 const IndexPage: React.FC = () => {
-  const [works] = useState<Work[]>(mockWorks)
+  const { works } = useWorksStore()
   const [activeFilter, setActiveFilter] = useState<WorkStatus | 'all'>('all')
 
   const filteredWorks = useMemo(() => {
@@ -36,8 +36,14 @@ const IndexPage: React.FC = () => {
   }
 
   const handleWorkClick = (work: Work) => {
-    console.log('[IndexPage] Click work:', work.id, work.title)
-    Taro.showToast({ title: `查看《${work.title}》`, icon: 'none' })
+    console.log('[IndexPage] Click work, navigate to detail:', work.id, work.title)
+    Taro.navigateTo({
+      url: `/pages/work-detail/index?id=${work.id}`,
+      fail: (err) => {
+        console.error('[IndexPage] Navigate fail:', err)
+        Taro.showToast({ title: work.title, icon: 'none' })
+      }
+    })
   }
 
   return (
@@ -45,7 +51,7 @@ const IndexPage: React.FC = () => {
       className={styles.container}
       scrollY
       onPullDownRefresh={() => {
-        console.log('[IndexPage] Pull down refresh')
+        console.log('[IndexPage] Pull down refresh, works count:', works.length)
         setTimeout(() => Taro.stopPullDownRefresh(), 500)
       }}
     >

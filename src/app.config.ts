@@ -5,7 +5,8 @@ export default defineAppConfig({
     'pages/schedule/index',
     'pages/feedback/index',
     'pages/preview/index',
-    'pages/schedule-setting/index'
+    'pages/schedule-setting/index',
+    'pages/work-detail/index'
   ],
   window: {
     backgroundTextStyle: 'light',

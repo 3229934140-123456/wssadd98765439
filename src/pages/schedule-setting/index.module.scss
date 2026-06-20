@@ -279,3 +279,17 @@
     transform: scale(0.98);
   }
 }
+
+.btnSaveDisabled {
+  background: $color-bg-input !important;
+  color: $color-text-tertiary !important;
+  pointer-events: none !important;
+}
+
+.emptyWorksHint {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  text-align: center;
+  padding: $spacing-xl 0;
+  line-height: $line-height-normal;
+}
