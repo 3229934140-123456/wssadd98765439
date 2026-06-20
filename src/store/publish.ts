@@ -1,6 +1,12 @@
 import { create } from 'zustand'
 import Taro from '@tarojs/taro'
-import { WorkPage, WorkFileType, RatingLevel, PublishFormData } from '@/types'
+import {
+  WorkPage,
+  WorkFileType,
+  RatingLevel,
+  PublishFormData,
+  ReviewTimelineEvent
+} from '@/types'
 import { generateId } from '@/utils'
 
 interface UploadedFileInfo {
@@ -13,6 +19,7 @@ interface UploadedFileInfo {
 
 interface PublishState {
   editingWorkId: string | null
+  editingTimeline: ReviewTimelineEvent[]
   formData: PublishFormData
   uploadedFile: UploadedFileInfo | null
   previewPages: WorkPage[]
@@ -29,6 +36,7 @@ interface PublishState {
     uploadedFile: UploadedFileInfo | null
     previewPages: WorkPage[]
     isPagesChecked: boolean
+    timeline?: ReviewTimelineEvent[]
   }) => void
   resetPublish: () => void
 }
@@ -45,6 +53,7 @@ const initialFormData: PublishFormData = {
 
 export const usePublishStore = create<PublishState>((set, get) => ({
   editingWorkId: null,
+  editingTimeline: [],
   formData: initialFormData,
   uploadedFile: null,
   previewPages: [],
@@ -92,6 +101,7 @@ export const usePublishStore = create<PublishState>((set, get) => ({
     console.log('[PublishStore] Load from work snapshot:', data.workId)
     set({
       editingWorkId: data.workId,
+      editingTimeline: data.timeline || [],
       formData: data.formData,
       uploadedFile: data.uploadedFile,
       previewPages: data.previewPages,
@@ -103,6 +113,7 @@ export const usePublishStore = create<PublishState>((set, get) => ({
   resetPublish: () =>
     set(() => ({
       editingWorkId: null,
+      editingTimeline: [],
       formData: initialFormData,
       uploadedFile: null,
       previewPages: [],

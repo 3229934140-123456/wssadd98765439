@@ -10,7 +10,9 @@ import {
   ReviewStage,
   WorkPublishSnapshot,
   WorkStats,
-  DailyTrendPoint
+  DailyTrendPoint,
+  ReviewEventType,
+  ReviewTimelineEvent
 } from '@/types'
 import { mockWorks } from '@/data/works'
 import { generateId } from '@/utils'
@@ -54,25 +56,91 @@ const parseCP = (cpStr: string) => {
   return [{ name: cpStr }]
 }
 
+const makeEvent = (
+  type: ReviewEventType,
+  note?: string,
+  time = new Date().toISOString()
+): ReviewTimelineEvent => ({
+  id: generateId(),
+  type,
+  time,
+  note
+})
+
+const buildMockReviewTimeline = (
+  status: WorkStatus,
+  createdAt: string,
+  rejectReason?: string
+): ReviewTimelineEvent[] => {
+  const created = new Date(createdAt)
+  const events: ReviewTimelineEvent[] = []
+  events.push(makeEvent('created', undefined, created.toISOString()))
+
+  if (status === 'draft') return events
+
+  const submitted = new Date(created.getTime() + 1000 * 60 * 30)
+  events.push(makeEvent('submitted', undefined, submitted.toISOString()))
+
+  if (status === 'reviewing') {
+    const reviewing = new Date(submitted.getTime() + 1000 * 60 * 60 * 2)
+    events.push(makeEvent('reviewing', undefined, reviewing.toISOString()))
+    return events
+  }
+
+  if (status === 'rejected') {
+    const reviewing = new Date(submitted.getTime() + 1000 * 60 * 60 * 2)
+    events.push(makeEvent('reviewing', undefined, reviewing.toISOString()))
+    const rejected = new Date(reviewing.getTime() + 1000 * 60 * 60 * 5)
+    events.push(
+      makeEvent(
+        'rejected',
+        rejectReason || '稿件存在内容问题，请修改后重新提交',
+        rejected.toISOString()
+      )
+    )
+    return events
+  }
+
+  if (status === 'published' || status === 'offline') {
+    const reviewing = new Date(submitted.getTime() + 1000 * 60 * 60 * 2)
+    events.push(makeEvent('reviewing', undefined, reviewing.toISOString()))
+    const passed = new Date(reviewing.getTime() + 1000 * 60 * 60 * 4)
+    events.push(makeEvent('passed', undefined, passed.toISOString()))
+    return events
+  }
+
+  return events
+}
+
 const enrichMockWorks = (works: Work[]): Work[] =>
-  works.map((w, idx) => ({
-    ...w,
-    stats: {
-      viewCount: 120 + idx * 80,
-      favoriteCount: 15 + idx * 6,
-      purchaseCount: 8 + idx * 4,
-      previewClickCount: 45 + idx * 20,
-      trend: generateMockTrend()
-    },
-    reviewStage:
+  works.map((w, idx) => {
+    const reviewStage: ReviewStage | undefined =
       w.status === 'published'
         ? 'passed'
         : w.status === 'reviewing'
         ? idx % 2 === 0
           ? 'reviewing'
           : 'submitted'
+        : w.status === 'rejected'
+        ? 'need-fix'
         : undefined
-  }))
+    return {
+      ...w,
+      stats: {
+        viewCount: 120 + idx * 80,
+        favoriteCount: 15 + idx * 6,
+        purchaseCount: 8 + idx * 4,
+        previewClickCount: 45 + idx * 20,
+        trend: generateMockTrend()
+      },
+      reviewStage,
+      reviewTimeline: buildMockReviewTimeline(
+        w.status,
+        w.createdAt,
+        w.rejectReason
+      )
+    }
+  })
 
 interface WorksState {
   works: Work[]
@@ -83,6 +151,8 @@ interface WorksState {
     fileType: WorkFileType
     uploadedFile?: UploadedFileInfoForSnapshot | null
     isPagesChecked?: boolean
+    replaceWorkId?: string
+    previousTimeline?: ReviewTimelineEvent[]
   }) => string
   saveDraft: (data: {
     formData: PublishFormData
@@ -99,6 +169,11 @@ interface WorksState {
   rejectWork: (id: string, reason: string) => void
   passWork: (id: string) => void
   setReviewStage: (id: string, stage: ReviewStage, reason?: string) => void
+  addReviewEvent: (
+    id: string,
+    type: ReviewEventType,
+    note?: string
+  ) => void
 }
 
 export const useWorksStore = create<WorksState>()(
@@ -108,7 +183,21 @@ export const useWorksStore = create<WorksState>()(
 
       addWork: (data) => {
         const id = generateId()
+        const now = new Date().toISOString()
         const actualPrice = data.formData.price === -1 ? 0 : data.formData.price
+
+        const baseTimeline: ReviewTimelineEvent[] = data.previousTimeline
+          ? [...data.previousTimeline]
+          : [makeEvent('created', undefined, now)]
+        const isResubmit = !!data.replaceWorkId
+        baseTimeline.push(
+          makeEvent(
+            isResubmit ? 'resubmitted' : 'submitted',
+            isResubmit ? '作者修改后重新提交' : undefined,
+            now
+          )
+        )
+
         const work: Work = {
           id,
           title: data.formData.title,
@@ -122,24 +211,38 @@ export const useWorksStore = create<WorksState>()(
           fileType: data.fileType,
           status: 'reviewing',
           previewPages: data.previewPages,
-          createdAt: new Date().toISOString(),
-          submittedAt: new Date().toISOString(),
+          createdAt: data.previousTimeline?.length
+            ? (data.previousTimeline[0]?.time || now)
+            : now,
+          submittedAt: now,
           purchaseCount: 0,
           favoriteCount: 0,
           reviewStage: 'submitted',
-          reviewUpdatedAt: new Date().toISOString(),
+          reviewUpdatedAt: now,
+          rejectReason: undefined,
           publishSnapshot: {
             formData: data.formData,
             uploadedFile: data.uploadedFile || null,
             previewPages: data.previewPages,
             isPagesChecked: !!data.isPagesChecked
           },
-          stats: emptyStats()
+          stats: emptyStats(),
+          reviewTimeline: baseTimeline
         }
-        set((state) => ({
-          works: [work, ...state.works]
-        }))
-        console.log('[WorksStore] Added new work (reviewing):', work.id, work.title)
+
+        set((state) => {
+          let nextWorks = state.works
+          if (data.replaceWorkId) {
+            nextWorks = nextWorks.filter((w) => w.id !== data.replaceWorkId)
+          }
+          return { works: [work, ...nextWorks] }
+        })
+        console.log(
+          '[WorksStore] Added new work (reviewing):',
+          work.id,
+          work.title,
+          isResubmit ? `(replaced ${data.replaceWorkId})` : ''
+        )
         return id
       },
 
@@ -165,8 +268,12 @@ export const useWorksStore = create<WorksState>()(
                     coverUrl: data.coverUrl || w.coverUrl,
                     fileType: data.fileType || w.fileType,
                     previewPages:
-                      data.previewPages.length > 0 ? data.previewPages : w.previewPages,
+                      data.previewPages.length > 0
+                        ? data.previewPages
+                        : w.previewPages,
                     status: 'draft',
+                    rejectReason: undefined,
+                    reviewStage: undefined,
                     publishSnapshot: {
                       formData: data.formData,
                       uploadedFile: data.uploadedFile || null,
@@ -204,7 +311,8 @@ export const useWorksStore = create<WorksState>()(
               previewPages: data.previewPages,
               isPagesChecked: !!data.isPagesChecked
             },
-            stats: emptyStats()
+            stats: emptyStats(),
+            reviewTimeline: [makeEvent('created', undefined, now)]
           }
           set((state) => ({
             works: [draft, ...state.works]
@@ -233,6 +341,7 @@ export const useWorksStore = create<WorksState>()(
       },
 
       rejectWork: (id, reason) => {
+        const now = new Date().toISOString()
         set((state) => ({
           works: state.works.map((w) =>
             w.id === id
@@ -241,7 +350,11 @@ export const useWorksStore = create<WorksState>()(
                   status: 'rejected',
                   rejectReason: reason,
                   reviewStage: 'need-fix',
-                  reviewUpdatedAt: new Date().toISOString()
+                  reviewUpdatedAt: now,
+                  reviewTimeline: [
+                    ...w.reviewTimeline,
+                    makeEvent('rejected', reason, now)
+                  ]
                 }
               : w
           )
@@ -250,6 +363,7 @@ export const useWorksStore = create<WorksState>()(
       },
 
       passWork: (id) => {
+        const now = new Date().toISOString()
         set((state) => ({
           works: state.works.map((w) =>
             w.id === id
@@ -257,8 +371,12 @@ export const useWorksStore = create<WorksState>()(
                   ...w,
                   status: 'published',
                   reviewStage: 'passed',
-                  reviewUpdatedAt: new Date().toISOString(),
-                  publishedAt: new Date().toISOString()
+                  reviewUpdatedAt: now,
+                  publishedAt: now,
+                  reviewTimeline: [
+                    ...w.reviewTimeline,
+                    makeEvent('passed', undefined, now)
+                  ]
                 }
               : w
           )
@@ -267,19 +385,39 @@ export const useWorksStore = create<WorksState>()(
       },
 
       setReviewStage: (id, stage, reason) => {
+        const now = new Date().toISOString()
+        set((state) => ({
+          works: state.works.map((w) => {
+            if (w.id !== id) return w
+            const extraEvents: ReviewTimelineEvent[] = []
+            if (stage === 'reviewing') extraEvents.push(makeEvent('reviewing', undefined, now))
+            if (stage === 'need-fix' && reason)
+              extraEvents.push(makeEvent('rejected', reason, now))
+            if (stage === 'passed') extraEvents.push(makeEvent('passed', undefined, now))
+            return {
+              ...w,
+              reviewStage: stage,
+              reviewUpdatedAt: now,
+              reviewTimeline: [...w.reviewTimeline, ...extraEvents],
+              ...(stage === 'need-fix' && reason
+                ? { rejectReason: reason, status: 'rejected' }
+                : {}),
+              ...(stage === 'passed'
+                ? { status: 'published', publishedAt: now }
+                : {})
+            }
+          })
+        }))
+      },
+
+      addReviewEvent: (id, type, note) => {
+        const now = new Date().toISOString()
         set((state) => ({
           works: state.works.map((w) =>
             w.id === id
               ? {
                   ...w,
-                  reviewStage: stage,
-                  reviewUpdatedAt: new Date().toISOString(),
-                  ...(stage === 'need-fix' && reason
-                    ? { rejectReason: reason, status: 'rejected' }
-                    : {}),
-                  ...(stage === 'passed'
-                    ? { status: 'published', publishedAt: new Date().toISOString() }
-                    : {})
+                  reviewTimeline: [...w.reviewTimeline, makeEvent(type, note, now)]
                 }
               : w
           )

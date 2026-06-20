@@ -61,7 +61,15 @@ export const mockWorks: Work[] = Array.from({ length: 8 }, (_, i) => {
     publishedAt: statuses[i % statuses.length] === 'published' ? new Date(Date.now() - i * 86400000).toISOString() : undefined,
     purchaseCount: Math.floor(Math.random() * 500),
     favoriteCount: Math.floor(Math.random() * 200),
-    rejectReason: statuses[i % statuses.length] === 'rejected' ? '封面图片格式不符合要求，请重新上传' : undefined
+    rejectReason: statuses[i % statuses.length] === 'rejected' ? '封面图片格式不符合要求，请重新上传' : undefined,
+    stats: {
+      viewCount: 0,
+      favoriteCount: 0,
+      purchaseCount: 0,
+      previewClickCount: 0,
+      trend: []
+    },
+    reviewTimeline: []
   }
 })
 

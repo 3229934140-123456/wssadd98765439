@@ -141,9 +141,15 @@ const SchedulePage: React.FC = () => {
     })
   }
 
-  const handleReminderClick = (workId: string, scheduleId?: string) => {
+  const handleReminderClick = (
+    workId: string,
+    scheduleId?: string,
+    reminderType?: string
+  ) => {
+    const query = [`id=${workId}`]
+    if (reminderType) query.push(`reminderType=${reminderType}`)
     Taro.navigateTo({
-      url: `/pages/work-detail/index?id=${workId}`
+      url: `/pages/work-detail/index?${query.join('&')}`
     })
   }
 
@@ -401,7 +407,7 @@ const SchedulePage: React.FC = () => {
                     styles.reminderItem,
                     r.completed && styles.reminderItemDone
                   )}
-                  onClick={() => handleReminderClick(r.workId, r.scheduleId)}
+                  onClick={() => handleReminderClick(r.workId, r.scheduleId, r.type)}
                 >
                   <View
                     className={styles.reminderIndicator}

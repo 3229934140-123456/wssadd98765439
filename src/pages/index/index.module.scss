@@ -277,3 +277,69 @@
   font-weight: $font-weight-semibold;
   color: $color-text-primary;
 }
+
+.sortRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+}
+
+.sortScroll {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.sortChip {
+  display: inline-flex;
+  align-items: center;
+  padding: $spacing-xs $spacing-sm;
+  margin-right: $spacing-xs;
+  background: $color-bg-secondary;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  transition: all $transition-base;
+
+  &:last-child {
+    margin-right: 0;
+  }
+}
+
+.sortChipActive {
+  background: $color-primary;
+  color: $color-text-white;
+  font-weight: $font-weight-medium;
+}
+
+.declineChip {
+  flex-shrink: 0;
+  margin-right: 0;
+  margin-left: $spacing-sm;
+}
+
+.declineChip.sortChipActive {
+  background: #EF4444;
+}
+
+.overviewRowDeclining {
+  background: rgba(#EF4444, 0.04);
+  border-left: 6rpx solid #EF4444;
+}
+
+.declineTag {
+  display: inline-block;
+  margin-left: $spacing-sm;
+  padding: 2rpx 12rpx;
+  background: rgba(#EF4444, 0.12);
+  color: #EF4444;
+  font-size: 20rpx;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-xs;
+  vertical-align: middle;
+}
+
+.trend7dHint {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+}

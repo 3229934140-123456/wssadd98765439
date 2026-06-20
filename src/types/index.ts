@@ -2,6 +2,22 @@ export type WorkStatus = 'draft' | 'reviewing' | 'published' | 'rejected' | 'off
 
 export type ReviewStage = 'submitted' | 'reviewing' | 'need-fix' | 'passed'
 
+export type ReviewEventType =
+  | 'created'
+  | 'submitted'
+  | 'reviewing'
+  | 'rejected'
+  | 'resubmitted'
+  | 'passed'
+
+export interface ReviewTimelineEvent {
+  id: string
+  type: ReviewEventType
+  time: string
+  note?: string
+  operator?: string
+}
+
 export type WorkFileType = 'pdf' | 'long-image' | 'epub'
 
 export type RatingLevel = 'G' | 'PG' | 'R15' | 'R18'
@@ -73,6 +89,7 @@ export interface Work {
   reviewUpdatedAt?: string
   publishSnapshot?: WorkPublishSnapshot
   stats: WorkStats
+  reviewTimeline: ReviewTimelineEvent[]
 }
 
 export type ReminderType =
@@ -203,4 +220,22 @@ export const REMINDER_TYPE_COLORS: Record<ReminderType, string> = {
   'unlock-upcoming': '#10B981',
   'discount-ending': '#F59E0B',
   'offline-upcoming': '#EF4444'
+}
+
+export const REVIEW_EVENT_LABELS: Record<ReviewEventType, string> = {
+  created: '创建草稿',
+  submitted: '提交审核',
+  reviewing: '开始审核',
+  rejected: '审核驳回',
+  resubmitted: '重新提交',
+  passed: '审核通过'
+}
+
+export const REVIEW_EVENT_COLORS: Record<ReviewEventType, string> = {
+  created: '#9CA3AF',
+  submitted: '#6366F1',
+  reviewing: '#F59E0B',
+  rejected: '#EF4444',
+  resubmitted: '#3B82F6',
+  passed: '#10B981'
 }

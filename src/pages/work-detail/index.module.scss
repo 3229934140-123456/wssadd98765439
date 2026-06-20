@@ -499,3 +499,139 @@
     transform: scale(0.98);
   }
 }
+
+.deleteHint {
+  margin-left: auto;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  padding: 4rpx 12rpx;
+}
+
+.reviewTimelineV2 {
+  display: flex;
+  flex-direction: column;
+  padding-left: $spacing-sm;
+}
+
+.eventRow {
+  display: flex;
+  align-items: stretch;
+  gap: $spacing-md;
+}
+
+.eventLeft {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 24rpx;
+}
+
+.eventDot {
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: $radius-round;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 6rpx rgba(255, 255, 255, 0.6);
+  z-index: 2;
+}
+
+.eventDotLast {
+  box-shadow: 0 0 0 6rpx rgba(255, 255, 255, 0.6);
+}
+
+.eventLine {
+  flex: 1;
+  width: 4rpx;
+  background: $color-divider;
+  margin: 6rpx 0;
+  min-height: 24rpx;
+}
+
+.eventContent {
+  flex: 1;
+  padding-bottom: $spacing-md;
+}
+
+.eventHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6rpx;
+}
+
+.eventType {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+}
+
+.eventTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.eventNote {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  background: $color-bg-secondary;
+  padding: $spacing-sm;
+  border-radius: $radius-sm;
+  line-height: $line-height-normal;
+}
+
+.declineAlert {
+  background: rgba(#EF4444, 0.08);
+  border: 2rpx solid rgba(#EF4444, 0.2);
+  border-radius: $radius-md;
+  padding: $spacing-sm $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.declineAlertTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: #EF4444;
+  margin-bottom: 6rpx;
+}
+
+.declineAlertText {
+  font-size: $font-size-xs;
+  color: #991B1B;
+  line-height: $line-height-normal;
+}
+
+.trendBarDrop {
+  background: linear-gradient(180deg, #EF4444 0%, #F87171 100%) !important;
+}
+
+.trendDropLabel {
+  font-size: 18rpx;
+  color: #EF4444;
+  font-weight: $font-weight-semibold;
+  line-height: 1;
+}
+
+.highlightHint {
+  font-size: $font-size-xs;
+  color: $color-primary;
+  background: rgba($color-primary, 0.08);
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-sm;
+  margin-bottom: $spacing-sm;
+}
+
+.timelineItemHighlight {
+  background: rgba($color-primary, 0.06);
+  border: 2rpx solid rgba($color-primary, 0.3);
+  border-radius: $radius-md;
+  margin: -4rpx -8rpx 4rpx;
+  padding: 4rpx 8rpx;
+}
+
+.timelineDotHighlight {
+  transform: scale(1.3);
+  box-shadow: 0 0 0 6rpx rgba($color-primary, 0.15) !important;
+}
+
+.timelineContentHighlight {
+  background: rgba($color-primary, 0.04);
+}

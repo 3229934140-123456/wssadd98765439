@@ -75,7 +75,8 @@ const PublishPage: React.FC = () => {
           formData: work.publishSnapshot.formData,
           uploadedFile: work.publishSnapshot.uploadedFile as any,
           previewPages: work.publishSnapshot.previewPages,
-          isPagesChecked: work.publishSnapshot.isPagesChecked
+          isPagesChecked: work.publishSnapshot.isPagesChecked,
+          timeline: work.reviewTimeline
         })
         Taro.showToast({
           title: work.status === 'rejected' ? '已载入被驳回内容' : '已载入草稿',
@@ -297,6 +298,8 @@ const PublishPage: React.FC = () => {
       return
     }
 
+    const { editingTimeline } = usePublishStore.getState()
+
     Taro.showModal({
       title: editingWorkId ? '确认重新提交' : '确认提交',
       content: '提交后将进入审核流程，作品会出现在作品库"审核中"分类。确定提交吗？',
@@ -306,13 +309,6 @@ const PublishPage: React.FC = () => {
           const submitFormData = {
             ...formData,
             price: actualPrice
-          }
-          if (editingWorkId) {
-            // 如果是编辑草稿/驳回后重提，先移除旧的再新增
-            const store = useWorksStore.getState()
-            if (store.getWork(editingWorkId)) {
-              store.removeWork(editingWorkId)
-            }
           }
           const workId = addWork({
             formData: submitFormData,
@@ -328,7 +324,12 @@ const PublishPage: React.FC = () => {
                   fingerprint: (uploadedFile as any).fingerprint || ''
                 }
               : null,
-            isPagesChecked
+            isPagesChecked,
+            replaceWorkId: editingWorkId || undefined,
+            previousTimeline:
+              editingTimeline && editingTimeline.length > 0
+                ? editingTimeline
+                : undefined
           })
           setTimeout(() => {
             Taro.hideLoading()
