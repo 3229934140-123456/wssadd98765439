@@ -3,6 +3,7 @@ import { View, Text, Image, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import classnames from 'classnames'
 import { WorkPage } from '@/types'
+import { usePublishStore } from '@/store/publish'
 import styles from './index.module.scss'
 
 type IssueType = 'missing' | 'blurry' | 'wrong-direction'
@@ -13,18 +14,11 @@ const ISSUE_OPTIONS: { type: IssueType; label: string; icon: string }[] = [
   { type: 'wrong-direction', label: '方向错', icon: '🔄' }
 ]
 
-const MOCK_PAGES: WorkPage[] = Array.from({ length: 5 }, (_, i) => ({
-  index: i + 1,
-  url: `https://picsum.photos/id/${20 + i * 8}/800/1100`,
-  width: 800,
-  height: 1100,
-  issues: i === 2 ? ['blurry'] : []
-}))
-
 const PreviewPage: React.FC = () => {
-  const [pages, setPages] = useState<WorkPage[]>(MOCK_PAGES)
+  const { previewPages, setPageIssue, setPagesChecked } = usePublishStore()
   const [currentIndex, setCurrentIndex] = useState(0)
 
+  const pages = previewPages
   const currentPage = pages[currentIndex]
 
   const pagesWithIssues = useMemo(
@@ -33,20 +27,10 @@ const PreviewPage: React.FC = () => {
   )
 
   const toggleIssue = (issueType: IssueType) => {
-    setPages((prev) => {
-      const newPages = [...prev]
-      const page = { ...newPages[currentIndex] }
-      const currentIssues = page.issues ? [...page.issues] : []
-      const existingIndex = currentIssues.indexOf(issueType)
-      if (existingIndex > -1) {
-        currentIssues.splice(existingIndex, 1)
-      } else {
-        currentIssues.push(issueType)
-      }
-      page.issues = currentIssues
-      newPages[currentIndex] = page
-      return newPages
-    })
+    if (!currentPage) return
+    const hasIssue = currentPage.issues?.includes(issueType) || false
+    setPageIssue(currentPage.index, issueType, !hasIssue)
+    console.log('[PreviewPage] Toggle issue:', issueType, 'page:', currentPage.index)
   }
 
   const goToPage = (index: number) => {
@@ -57,27 +41,23 @@ const PreviewPage: React.FC = () => {
   }
 
   const handleBack = () => {
-    console.log('[PreviewPage] Go back with issues count:', pagesWithIssues.length)
+    console.log('[PreviewPage] Go back, total issues:', pagesWithIssues.length)
     Taro.navigateBack()
   }
 
   const handleConfirm = () => {
     console.log('[PreviewPage] Confirm check, total issues:', pagesWithIssues.length)
-    if (pagesWithIssues.length > 0) {
-      Taro.showModal({
-        title: '确认提交',
-        content: `共有${pagesWithIssues.length}页存在问题标记，是否仍确认检查完成？`,
-        success: (res) => {
-          if (res.confirm) {
-            Taro.showToast({ title: '检查完成', icon: 'success' })
-            setTimeout(() => Taro.navigateBack(), 1000)
-          }
-        }
-      })
-    } else {
-      Taro.showToast({ title: '全部页面检查通过', icon: 'success' })
-      setTimeout(() => Taro.navigateBack(), 1000)
-    }
+    setPagesChecked(true)
+    Taro.showToast({ title: '检查已确认', icon: 'success' })
+    setTimeout(() => Taro.navigateBack(), 800)
+  }
+
+  if (pages.length === 0) {
+    return (
+      <View className={styles.container} style={{ background: '#fff', padding: 80 }}>
+        <Text style={{ color: '#9CA3AF' }}>暂无预览内容</Text>
+      </View>
+    )
   }
 
   return (
@@ -111,7 +91,7 @@ const PreviewPage: React.FC = () => {
       </View>
 
       <View className={styles.thumbnailBar}>
-        <ScrollView className={styles.thumbnailList} scrollX>
+        <ScrollView className={styles.thumbnailList} scrollX scrollWithAnimation>
           {pages.map((page, index) => (
             <View
               key={page.index}

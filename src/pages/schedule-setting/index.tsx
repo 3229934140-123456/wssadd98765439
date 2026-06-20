@@ -4,6 +4,7 @@ import Taro from '@tarojs/taro'
 import classnames from 'classnames'
 import { mockWorks } from '@/data/works'
 import { ScheduleType, SCHEDULE_TYPE_LABELS, SCHEDULE_TYPE_COLORS } from '@/types'
+import { useScheduleStore } from '@/store/schedule'
 import { formatDate } from '@/utils'
 import styles from './index.module.scss'
 
@@ -16,6 +17,7 @@ const TYPE_OPTIONS: { type: ScheduleType; desc: string }[] = [
 
 const ScheduleSettingPage: React.FC = () => {
   const works = mockWorks.filter((w) => w.status !== 'offline')
+  const { addSchedule } = useScheduleStore()
 
   const [selectedWorkId, setSelectedWorkId] = useState<string>('')
   const [selectedType, setSelectedType] = useState<ScheduleType | null>(null)
@@ -23,6 +25,8 @@ const ScheduleSettingPage: React.FC = () => {
   const [selectedTime, setSelectedTime] = useState<string>('')
   const [discountRate, setDiscountRate] = useState<number>(80)
   const [discountDuration, setDiscountDuration] = useState<string>('3')
+
+  const selectedWork = works.find((w) => w.id === selectedWorkId)
 
   const canSave = useMemo(() => {
     const baseValid = selectedWorkId && selectedType && selectedDate && selectedTime
@@ -39,24 +43,33 @@ const ScheduleSettingPage: React.FC = () => {
   }
 
   const handleSave = () => {
-    if (!canSave) {
+    if (!canSave || !selectedWork || !selectedType || !selectedDate || !selectedTime) {
       Taro.showToast({ title: '请完善所有信息', icon: 'none' })
       return
     }
-    console.log('[ScheduleSettingPage] Save schedule:', {
+
+    const dateTime = new Date(`${selectedDate}T${selectedTime}:00`).toISOString()
+
+    const extraInfo = selectedType === 'discount'
+      ? {
+          discountRate: discountRate / 100,
+          duration: parseInt(discountDuration) || 1
+        }
+      : undefined
+
+    addSchedule({
       workId: selectedWorkId,
+      workTitle: selectedWork.title,
       type: selectedType,
-      date: selectedDate,
+      date: dateTime,
       time: selectedTime,
-      discountRate: selectedType === 'discount' ? discountRate / 100 : undefined,
-      duration: selectedType === 'discount' ? parseInt(discountDuration) : undefined
+      completed: false,
+      extraInfo
     })
-    Taro.showLoading({ title: '保存中...' })
-    setTimeout(() => {
-      Taro.hideLoading()
-      Taro.showToast({ title: '档期已添加', icon: 'success' })
-      setTimeout(() => Taro.navigateBack(), 1000)
-    }, 800)
+
+    console.log('[ScheduleSettingPage] Schedule saved to store')
+    Taro.showToast({ title: '档期已添加', icon: 'success' })
+    setTimeout(() => Taro.navigateBack(), 800)
   }
 
   return (

@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import classnames from 'classnames'
 import { ScheduleNode, SCHEDULE_TYPE_LABELS, SCHEDULE_TYPE_COLORS } from '@/types'
-import { mockScheduleNodes } from '@/data/schedule'
+import { useScheduleStore } from '@/store/schedule'
 import Calendar from '@/components/Calendar'
 import { formatDate } from '@/utils'
 import styles from './index.module.scss'
@@ -16,7 +16,7 @@ const LEGEND_ITEMS = [
 ]
 
 const SchedulePage: React.FC = () => {
-  const [schedules] = useState<ScheduleNode[]>(mockScheduleNodes)
+  const { schedules } = useScheduleStore()
 
   const upcomingSchedules = useMemo(() => {
     const now = new Date()

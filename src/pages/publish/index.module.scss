@@ -175,6 +175,86 @@
   color: $color-text-tertiary;
 }
 
+.uploadSuccess {
+  padding: $spacing-lg;
+  background: rgba(16, 185, 129, 0.06);
+  border-radius: $radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 2rpx solid rgba(16, 185, 129, 0.2);
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.uploadSuccessLeft {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.uploadSuccessIcon {
+  font-size: 48rpx;
+  margin-right: $spacing-md;
+}
+
+.uploadSuccessInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.uploadFileName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  @include text-ellipsis;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.uploadFileMeta {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.uploadSuccessRight {
+  font-size: $font-size-sm;
+  color: $color-success;
+  font-weight: $font-weight-medium;
+  margin-left: $spacing-md;
+}
+
+.issueSummaryBar {
+  background: rgba(239, 68, 68, 0.08);
+  border-radius: $radius-md;
+  padding: $spacing-sm $spacing-md;
+  margin-top: $spacing-md;
+}
+
+.issueSummaryText {
+  font-size: $font-size-sm;
+  color: $color-error;
+  font-weight: $font-weight-medium;
+}
+
+.pageCheckBtnDone {
+  background: rgba(16, 185, 129, 0.08) !important;
+  border-color: $color-success !important;
+  color: $color-success !important;
+}
+
+.checkHint {
+  display: block;
+  text-align: center;
+  font-size: $font-size-xs;
+  color: $color-warning;
+  margin-top: $spacing-sm;
+}
+
 .previewSection {
   background: $color-bg-card;
   border-radius: $radius-lg;
